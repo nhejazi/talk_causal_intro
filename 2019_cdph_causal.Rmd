@@ -1,0 +1,289 @@
+---
+title: "Causal Inference in Biomedical Research"
+subtitle: "Methods Discussion, California Department of Public Health"
+author: "[Nima Hejazi](https://nimahejazi.org), UC Berkeley"
+date: "`r Sys.Date()`"
+output:
+  beamer_presentation:
+    latex_engine: xelatex
+    includes:
+      in_header: header.tex
+    keep_tex: true
+    toc: true
+    incremental: true
+    theme: "metropolis"
+    fonttheme: "structurebold"
+---
+
+# Causal Inference as a Framework
+
+## Assessing HIV vaccine efficacy
+
+- The HIV Vaccine Trials Network (HVTN) is a large-scale collaboration leading
+  efforts to design and verify the efficacy of candidate preventive vaccines.
+- As an example, consider a study in which a vaccine ($A$) is administered,
+  based on baseline covariates $L$ (e.g., sex, age), and,
+  eventually, infection status ($Y$) is measured.
+- We'd like to assess the efficacy of the vaccine in preventing $Y = 1$ (HIV
+  infection). How do we go about doing this?
+- What about the baseline covariates $L$?
+
+## Causal effects and interventions
+
+- Formally, we observe data $O = (Y, A, L)$: an outcome $Y$, a treatment (or
+  exposure) $A$, and baseline covariates $L$.
+  - To simplify, consider $A \in \{0, 1\}$ -- i.e., two treatment levels.
+  - _Goal:_ What happens to the outcome $Y$ when we set $A$ to $1$? Note that
+    this implies an _intervention_ on the system.
+- Now, $A$ and $Y$ have a common cause (namely, $L$), so how to do we account
+  for this information?
+  - When we can randomize, we randomize.
+  - So, are observational studies hopeless?
+
+## Causal effects and potential outcomes
+
+- Although we see $O = (Y, A, L)$, we really would like to have seen an unmasked
+  version of this data $O = (Y(1), Y(0), A, L)$.
+  - $\{(Y(1), Y(0)\}$ are referred to as _potential outcomes_.
+      - $Y(1)$: What would have $Y$ been had $A = 1$.
+      - Similarly, $Y(0)$ corresponds to the case of $A = 0$.
+  - Intervening on the observed system -- e.g., setting $A$ to $1$ -- is a
+    thought experiment asking "what is $Y(1)$?"
+- Interventions are hypothetical disruptions to the observed system, defining
+  various potential outcomes.
+- In our example, $Y(1)$ is HIV infection status had the unit
+  received the vaccine.
+
+## Potential outcomes and treatment effects
+
+- If we had $\{(Y(1), Y(0)\}$, we could define the _treatment effect_
+  $\tau = Y(1) - Y(0)$ for an observed unit.
+- We consider $\tau = Y(1) - Y(0)$ across all units in the study to define
+  the sample treatment effect.
+- The intervention $A = 1$ breaks the relationship between $A$ and $L$
+  so, in defining $\tau$, we need not worry about $L$.
+- What if we had assigned vaccination based on clinical information (e.g.,
+  behavioral risk of HIV infection)?
+
+## Identification of causal effects
+
+- In order to establish an estimator for a causal effect, we need conditions
+  under which the causal quantity matches a statistically estimable quantity.
+- The set of conditions for this process are _identification_ results, which
+  vary with types of interventions and effects of interest.
+- In the most classical cases, we need four assumptions:
+  1. Consistency: "no other versions of treatment."
+  2. No unobserved confounders: "we have enough information to disentangle
+     potential outcomes."
+  3. No interference: "your treatment does not affect my outcome."
+  4. Positivity: "it must be possible to receive treatment."
+
+## Assessing causal effects
+
+- In practice, clinicians make treatment decisions, thus undoing are decoupling
+  of $L$ and $A$. What now?
+- The _propensity score_ $f(A \mid L)$ is the probability of receiving
+  treatment, given observed covariates.
+- This quantity can be used to construct valid estimators of causal effects,
+  since it contains all information about the relationship between $A$ and $L$.
+- In a randomized study, the propensity score contains no information, i.e.,
+  $f(A \mid L) = 0.5$.
+
+## What about censoring?
+
+- In considering potential outcomes, we've been dealing with
+  censoring, so it's naturally built into our framework.
+- Subject to censoring, the observed data is $O = (\Delta, Y, A, L)$, where
+  $\Delta \in \{0,1\}$ indicates missingness.
+- To assess causal effects in the presence of censoring, consider a _joint
+  intervention_, e.g., $\{A = 1, \Delta = 1\}$ that makes a unit both treated
+  _and_ observed.
+- Constructing estimators involves assessing the mechanism of missingness but
+  the problem is naturally handled.
+
+## Targeted Learning: Causal inference to statistics
+
+- Targeted Learning is a subfield of statistics developing robust estimators of
+  scientifically meaningful parameters.
+- In general, such parameters are inspired by causal quantities, with robust
+  estimators constructed using machine learning.
+- Our group has pioneered a user-friendly software ecosystem, [the
+  `tlverse`](https://tlverse.org), to accommodate data analytic applications.
+- Check out our software and publicly available materials:
+  - The `tlverse` homepage: https://tlverse.org
+  - The `tlverse` handbook: https://tlverse.org/tlverse-handbook
+  - Recent workshop: https://tlverse.org/acic2019-workshop
+- The `tlverse` is a team effort, with four founding developers, and several PhD
+  students now supporting continued work.
+
+# Estimation: The G-Formula
+
+## The g-formula at a single time point
+
+- Under identifiability conditions, the counterfactual mean
+  $\E[Y^{A=a}]$ is a weighted average of the mean outcome, standardized for
+  observed covariates in the study population:
+  $$\sum_{l_1} \E[Y \mid A_1 = a_1, L_1 = l_1]f(l_1),$$ where
+  $f(l_1) = \pr(L_1 = l_1)$.
+- In practice, $\E[Y \mid A_1 = a_1, L_1 = l_1]$ must be learned from the data,
+  e.g., with a parametric regression.
+- Consistency of the g-formula estimator depends on correct specification of
+  this model for the outcome mechanism.
+
+## The g-formula across multiple time points
+
+- The g-formula may straightforwardly be extended to the case of multiple time
+  points, again as a simple weighted average:
+  $$\sum_{l_1} \E[Y \mid A_0 = a_0, A_1 = a_1, L_1 = l_1]f(l_1 \mid a_0),$$
+  for a simple treatment strategy across two time points.
+- Key difference from the point treatment case: every factor is conditional on
+  its past treatment and covariate history.
+- Positivity is required, i.e., $f(l_1 \mid a_0) \neq 0$.
+
+## The g-formula across multiple time points
+
+- In the case of multiple time points $k$, the g-formula is
+  $$\sum_{\bar{l}} \E[Y \mid \bar{A} = \bar{a}, \bar{L} = \bar{l}]
+    \prod_{k=0}^{K} f(l_k \mid \bar{a}_{k-1}, \bar{l}_{k-1}).$$
+- In practice, we estimate the components $\hat{\E}[]Y \mid \bar{A} = \bar{a},
+  \bar{L} = \bar{l}]$ and $\hat{f}(l_k \mid \bar{a}_{k-1}, \bar{l}_{k-1})$,
+  i.e., the _plug-in g-formula_.
+- When the components are fit with parametric models, this plug-in g-formula
+  estimator is referred to as the _parametric g-formula_.
+
+# Estimation: Inverse Probability Weighting
+
+## Inverse probability weighting at a single time point
+
+- To assess the counterfactual mean outcome $\E[Y^{A_1 = a}]$ under a treatment
+  contrast $a$, it is sufficient to examine the counterfactual mean in the
+  pseudo-population based on the weighting scheme
+  $W^{A_1} = \frac{1}{f(A_1 \mid L_1)}$.
+- The inverse weight $W^A$ is constructed based on the propensity score $f(A_1
+  \mid L_1)$.
+- One may also use stabilized weights
+  $SW^{A_1} = \frac{f(A_1)}{f(A_1 \mid L_1)}$.
+
+## Inverse probability weighting across multiple time points
+
+- Consider now just two time points where we have time-varying treatments
+  $\bar{A} = (A_0, A_1)$ and covariates $\bar{L} = (L_0, L_1)$.
+- IP weights must be extended to account for history:
+  $$W^{\bar{A}} = \prod_{k=0}^K \frac{1}{f(A_k \mid \bar{A}_{k-1},
+  \bar{L}_k)}.$$
+- The denominator may be interpreted as the individual's probability of
+  receiving their observed treatment history, conditional on their covariate
+  history.
+- With nonstabilized IP weights, a pseudo-population is created in which
+  randomization probabilities at each time $k$ are constant, so sequential
+  exchangeability holds.
+
+## Inverse probability weighting across multiple time points
+
+- In general, the _stabilized_ IP weights are
+  $$SW^{\bar{A}} = \prod_{k=0}^K \frac{f(A_k \mid \bar{A}_{k-1})}
+  {f(A_k \mid \bar{A}_{k-1}, \bar{L}_k)}.$$
+- Note that the stabilized term (in the numerator) may be misspecified without
+  inducing any bias in the estimate of the counterfactual mean.
+- With stabilized IP weights, a pseudo-population is created in which
+  randomization probabilities at each time $k$ are dependent only on past
+  treatment history, so sequential exchangeability holds.
+
+## Inverse probability weighting across multiple time points
+
+- In observational studies, $f(A_k \mid \bar{A}_{k-1}, \bar{L}_k)$ must be
+  estimated (known by design in randomized trials).
+- When comparing parametric g-formula and IP weighting estimates, substantial
+  difference implies misspecification of either the outcome or treatment
+  assignment model.
+- Importantly, while a difference implies model misspecification, agreement
+  between the two _does not certify_ their correctness.
+- When fitting an MSM (e.g., $\E[Y \mid \bar{A}] = \theta_0 + \theta_1
+  \sum_{k=0}^K A_k$), use weighted least squared with IP weights.
+- In the case of the IP-weighted MSM, use of the stabilized weights
+  $SW^{\bar{A}}$ generally gives narrower confidence intervals.
+
+# Censoring: Coping with Missingness
+
+## Censoring at a single time point
+
+- Let $C = 0$ denote being uncensored. Recall that conditioning on being
+  uncensored induces selection bias under the null.
+- When $C$ is either a collider on a pathway between treatment $A$ and outcome
+  $Y$ or the descendent of such a collider.
+- We address censoring by considering a _joint intervention_ $do(A = a, C = 0)$
+  that makes an individual uncensored and sets their treatment value to $a$.
+
+## Addressing censoring across multiple time points
+
+- Censoring is monotonic, i.e., $C_m = 0$ implies $C_j = 0 \quad \forall \quad
+  j \in \{1, \ldots, m-1\}$.
+- As before, we consider a joint intervention: $(\bar{a}, \bar{c} = 0)$ that
+  sets the treatment history to $\bar{a}$ and induces no censoring.
+- G-formula for the counterfactual mean $\E[Y^{\bar{a}}]$ is
+  $$\sum_{\bar{l}} \E[Y \mid \bar{A} = \bar{a}, \bar{C} = \bar{0}, \bar{L} =
+  \bar{l}] \prod_{k=0}^K f(l_k \mid \bar{a}_{k-1}, c_{k-1} = 0,
+  \bar{l}_{k-1}).$$
+
+## Addressing censoring across multiple time points
+
+- IP-weighting may also be used to estimate the counterfactual mean using a
+  pseudo-population created by the weights $W^{\bar{A}} \times W^{\bar{C}}$,
+  where $$W^{\bar{C}} = \prod_{k=1}^{K+1} \frac{1}{\pr(C_k = 0 \mid
+  \bar{A}_{k-1}, C_{k-1} = 0, \bar{L}_k)}.$$
+- The effect of IP-weighting to create a pseudo-population is as before ---
+  censoring is abolished by replacing censored individuals with uncensored
+  copies with the same covariate history and treatment history. Thus, the
+  pseudo-population is of the same size as the original _before_ censoring.
+
+## Addressing censoring across multiple time points
+
+- Stabilized IP weights also create a (different) pseudo-population, where the
+  weight $W^{\bar{C}}$ is $$W^{\bar{C}} = \prod_{k=1}^{K+1}
+  \frac{\pr(C_k = 0 \mid \bar{A}_{k-1}, C_{k-1} = 0)}
+  {\pr(C_k = 0 \mid \bar{A}_{k-1}, C_{k-1} = 0, \bar{L}_k)}.$$
+- Stabilized weights work a bit differently: this pseudo-population is of the
+  same size as the original _after_ censoring but with the censoring event made
+  random across observed times, thus removing any selection bias.
+
+<!--
+# Estimation: Doubly robust methods
+
+## Doubly robust estimation at a single time point
+
+- Why? "Doubly robust estimators give us two chances to get it right when, as in
+  most observational studies, there are many confounders and non-saturated
+  models are required."
+- Consistent estimation as long as one of either the treatment assignment or
+  outcome model is correctly specified.
+- Construction of a doubly robust estimator:
+  1. Compute IP weight estimates $\hat{W}^A$ from $\hat{\pr}[A = 1 \mid L]$.
+  2. Compute predicted values from $\hat{\E}[Y \mid A = a, L = l, D]$ a modified
+     outcome model where $D = (2A-1) \hat{W}^A$.
+  3. Standardize mean of predictions $\hat{\E}[Y \mid A = a, L = l, D]$ under
+     treatment contrasts $A=1$ and $A=0$.
+
+## Doubly robust estimation across multiple time points
+
+- Extending the doubly robust estimator (analogous steps):
+  1. Using a regression model for $\pr[A_k = 1 \mid \bar{A}_{k-1}, \bar{L}_k]$,
+     compute the time-varying IP weight estimates $\hat{W}^{\bar{A}_m}$ and the
+     modified IP weight $\hat{W}^{\bar{A}_{m-1}, a_m = 1}$.
+  2. Recursively fit a sequence of dependent regression models from last time
+     point $K$ to $m = 0$ with outcomes $\{Y, T_m, \ldots, T_1\}$, where
+     pseudo-outcomes $T_{m+1}$ are generated by previous regression for time
+     $m+1$, including as an additional covariate the time-varying IP weights
+     $\hat{W}^{\bar{A}_m}$.
+  3. Standardize the mean of $\hat{T}_0$ by averaging across all units to
+     recover $\hat{\E}[\hat{T}_0]$, estimate of $\E[Y^{a_0=1, \ldots, a_k=1}]$.
+
+## Doubly robust estimation across multiple time points
+
+- Under conditional exchangeability and positivity, the DR estimator reliably
+  estimates the average causal effect as long as one of the following holds
+  - the treatment model is correct at all times,
+  - the outcome model is correct at all times, or
+  - (_k+1 robustness_) the treatment model is correct for time $0$ to $k$ and
+    the outcome model is correct for times $k+1$ to $K$.
+-->
+

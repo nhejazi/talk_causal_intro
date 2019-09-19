@@ -1,0 +1,588 @@
+\PassOptionsToPackage{unicode=true}{hyperref} % options for packages loaded elsewhere
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[ignorenonframetext,]{beamer}
+\usepackage{pgfpages}
+\setbeamertemplate{caption}[numbered]
+\setbeamertemplate{caption label separator}{: }
+\setbeamercolor{caption name}{fg=normal text.fg}
+\beamertemplatenavigationsymbolsempty
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provides euro and other symbols
+\else % if luatex or xelatex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+\usetheme[]{metropolis}
+\usefonttheme{structurebold}
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage[]{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\usepackage{hyperref}
+\hypersetup{
+            pdftitle={Causal Inference in Biomedical Research},
+            pdfauthor={Nima Hejazi, UC Berkeley},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\newif\ifbibliography
+% Prevent slide breaks in the middle of a paragraph:
+\widowpenalties 1 10000
+\raggedbottom
+\setbeamertemplate{part page}{
+\centering
+\begin{beamercolorbox}[sep=16pt,center]{part title}
+  \usebeamerfont{part title}\insertpart\par
+\end{beamercolorbox}
+}
+\setbeamertemplate{section page}{
+\centering
+\begin{beamercolorbox}[sep=12pt,center]{part title}
+  \usebeamerfont{section title}\insertsection\par
+\end{beamercolorbox}
+}
+\setbeamertemplate{subsection page}{
+\centering
+\begin{beamercolorbox}[sep=8pt,center]{part title}
+  \usebeamerfont{subsection title}\insertsubsection\par
+\end{beamercolorbox}
+}
+\AtBeginPart{
+  \frame{\partpage}
+}
+\AtBeginSection{
+  \ifbibliography
+  \else
+    \frame{\sectionpage}
+  \fi
+}
+\AtBeginSubsection{
+  \frame{\subsectionpage}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+
+% set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+% header.tex: boring LaTeX/Beamer details + macros
+
+% math shorthand
+\usepackage{bm}
+\usepackage{amstext}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\pr}{\mathbb{P}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\X}{\mathcal{X}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\lik}{\mathcal{L}}
+
+\title{Causal Inference in Biomedical Research}
+\providecommand{\subtitle}[1]{}
+\subtitle{Methods Discussion, California Department of Public Health}
+\author{\href{https://nimahejazi.org}{Nima Hejazi}, UC Berkeley}
+\date{2019-09-18}
+
+\begin{document}
+\frame{\titlepage}
+
+\begin{frame}
+\tableofcontents[hideallsubsections]
+\end{frame}
+\hypertarget{causal-inference-as-a-framework}{%
+\section{Causal Inference as a
+Framework}\label{causal-inference-as-a-framework}}
+
+\begin{frame}{Assessing HIV vaccine efficacy}
+\protect\hypertarget{assessing-hiv-vaccine-efficacy}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  The HIV Vaccine Trials Network (HVTN) is a large-scale collaboration
+  leading efforts to design and verify the efficacy of candidate
+  preventive vaccines.
+\item
+  As an example, consider a study in which a vaccine (\(A\)) is
+  administered, based on baseline covariates \(L\) (e.g., sex, age),
+  and, eventually, infection status (\(Y\)) is measured.
+\item
+  We'd like to assess the efficacy of the vaccine in preventing
+  \(Y = 1\) (HIV infection). How do we go about doing this?
+\item
+  What about the baseline covariates \(L\)?
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Causal effects and interventions}
+\protect\hypertarget{causal-effects-and-interventions}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  Formally, we observe data \(O = (Y, A, L)\): an outcome \(Y\), a
+  treatment (or exposure) \(A\), and baseline covariates \(L\).
+
+  \begin{itemize}[<+->]
+  \tightlist
+  \item
+    To simplify, consider \(A \in \{0, 1\}\) -- i.e., two treatment
+    levels.
+  \item
+    \emph{Goal:} What happens to the outcome \(Y\) when we set \(A\) to
+    \(1\)? Note that this implies an \emph{intervention} on the system.
+  \end{itemize}
+\item
+  Now, \(A\) and \(Y\) have a common cause (namely, \(L\)), so how to do
+  we account for this information?
+
+  \begin{itemize}[<+->]
+  \tightlist
+  \item
+    When we can randomize, we randomize.
+  \item
+    So, are observational studies hopeless?
+  \end{itemize}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Causal effects and potential outcomes}
+\protect\hypertarget{causal-effects-and-potential-outcomes}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  Although we see \(O = (Y, A, L)\), we really would like to have seen
+  an unmasked version of this data \(O = (Y(1), Y(0), A, L)\).
+
+  \begin{itemize}[<+->]
+  \tightlist
+  \item
+    \(\{(Y(1), Y(0)\}\) are referred to as \emph{potential outcomes}.
+
+    \begin{itemize}[<+->]
+    \tightlist
+    \item
+      \(Y(1)\): What would have \(Y\) been had \(A = 1\).
+    \item
+      Similarly, \(Y(0)\) corresponds to the case of \(A = 0\).
+    \end{itemize}
+  \item
+    Intervening on the observed system -- e.g., setting \(A\) to \(1\)
+    -- is a thought experiment asking ``what is \(Y(1)\)?''
+  \end{itemize}
+\item
+  Interventions are hypothetical disruptions to the observed system,
+  defining various potential outcomes.
+\item
+  In our example, \(Y(1)\) is HIV infection status had the unit received
+  the vaccine.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Potential outcomes and treatment effects}
+\protect\hypertarget{potential-outcomes-and-treatment-effects}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  If we had \(\{(Y(1), Y(0)\}\), we could define the \emph{treatment
+  effect} \(\tau = Y(1) - Y(0)\) for an observed unit.
+\item
+  We consider \(\tau = Y(1) - Y(0)\) across all units in the study to
+  define the sample treatment effect.
+\item
+  The intervention \(A = 1\) breaks the relationship between \(A\) and
+  \(L\) so, in defining \(\tau\), we need not worry about \(L\).
+\item
+  What if we had assigned vaccination based on clinical information
+  (e.g., behavioral risk of HIV infection)?
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Identification of causal effects}
+\protect\hypertarget{identification-of-causal-effects}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  In order to establish an estimator for a causal effect, we need
+  conditions under which the causal quantity matches a statistically
+  estimable quantity.
+\item
+  The set of conditions for this process are \emph{identification}
+  results, which vary with types of interventions and effects of
+  interest.
+\item
+  In the most classical cases, we need four assumptions:
+
+  \begin{enumerate}[<+->]
+  \tightlist
+  \item
+    Consistency: ``no other versions of treatment.''
+  \item
+    No unobserved confounders: ``we have enough information to
+    disentangle potential outcomes.''
+  \item
+    No interference: ``your treatment does not affect my outcome.''
+  \item
+    Positivity: ``it must be possible to receive treatment.''
+  \end{enumerate}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Assessing causal effects}
+\protect\hypertarget{assessing-causal-effects}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  In practice, clinicians make treatment decisions, thus undoing are
+  decoupling of \(L\) and \(A\). What now?
+\item
+  The \emph{propensity score} \(f(A \mid L)\) is the probability of
+  receiving treatment, given observed covariates.
+\item
+  This quantity can be used to construct valid estimators of causal
+  effects, since it contains all information about the relationship
+  between \(A\) and \(L\).
+\item
+  In a randomized study, the propensity score contains no information,
+  i.e., \(f(A \mid L) = 0.5\).
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{What about censoring?}
+\protect\hypertarget{what-about-censoring}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  In considering potential outcomes, we've been dealing with censoring,
+  so it's naturally built into our framework.
+\item
+  Subject to censoring, the observed data is \(O = (\Delta, Y, A, L)\),
+  where \(\Delta \in \{0,1\}\) indicates missingness.
+\item
+  To assess causal effects in the presence of censoring, consider a
+  \emph{joint intervention}, e.g., \(\{A = 1, \Delta = 1\}\) that makes
+  a unit both treated \emph{and} observed.
+\item
+  Constructing estimators involves assessing the mechanism of
+  missingness but the problem is naturally handled.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Targeted Learning: Causal inference to
+statistics}
+\protect\hypertarget{targeted-learning-causal-inference-to-statistics}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  Targeted Learning is a subfield of statistics developing robust
+  estimators of scientifically meaningful parameters.
+\item
+  In general, such parameters are inspired by causal quantities, with
+  robust estimators constructed using machine learning.
+\item
+  Our group has pioneered a user-friendly software ecosystem,
+  \href{https://tlverse.org}{the \texttt{tlverse}}, to accommodate data
+  analytic applications.
+\item
+  Check out our software and publicly available materials:
+
+  \begin{itemize}[<+->]
+  \tightlist
+  \item
+    The \texttt{tlverse} homepage: \url{https://tlverse.org}
+  \item
+    The \texttt{tlverse} handbook:
+    \url{https://tlverse.org/tlverse-handbook}
+  \item
+    Recent workshop: \url{https://tlverse.org/acic2019-workshop}
+  \end{itemize}
+\item
+  The \texttt{tlverse} is a team effort, with four founding developers,
+  and several PhD students now supporting continued work.
+\end{itemize}
+
+\end{frame}
+
+\hypertarget{estimation-the-g-formula}{%
+\section{Estimation: The G-Formula}\label{estimation-the-g-formula}}
+
+\begin{frame}{The g-formula at a single time point}
+\protect\hypertarget{the-g-formula-at-a-single-time-point}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  Under identifiability conditions, the counterfactual mean
+  \(\E[Y^{A=a}]\) is a weighted average of the mean outcome,
+  standardized for observed covariates in the study population:
+  \[\sum_{l_1} \E[Y \mid A_1 = a_1, L_1 = l_1]f(l_1),\] where
+  \(f(l_1) = \pr(L_1 = l_1)\).
+\item
+  In practice, \(\E[Y \mid A_1 = a_1, L_1 = l_1]\) must be learned from
+  the data, e.g., with a parametric regression.
+\item
+  Consistency of the g-formula estimator depends on correct
+  specification of this model for the outcome mechanism.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{The g-formula across multiple time points}
+\protect\hypertarget{the-g-formula-across-multiple-time-points}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  The g-formula may straightforwardly be extended to the case of
+  multiple time points, again as a simple weighted average:
+  \[\sum_{l_1} \E[Y \mid A_0 = a_0, A_1 = a_1, L_1 = l_1]f(l_1 \mid a_0),\]
+  for a simple treatment strategy across two time points.
+\item
+  Key difference from the point treatment case: every factor is
+  conditional on its past treatment and covariate history.
+\item
+  Positivity is required, i.e., \(f(l_1 \mid a_0) \neq 0\).
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{The g-formula across multiple time points}
+\protect\hypertarget{the-g-formula-across-multiple-time-points-1}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  In the case of multiple time points \(k\), the g-formula is
+  \[\sum_{\bar{l}} \E[Y \mid \bar{A} = \bar{a}, \bar{L} = \bar{l}]
+    \prod_{k=0}^{K} f(l_k \mid \bar{a}_{k-1}, \bar{l}_{k-1}).\]
+\item
+  In practice, we estimate the components
+  \(\hat{\E}[]Y \mid \bar{A} = \bar{a}, \bar{L} = \bar{l}]\) and
+  \(\hat{f}(l_k \mid \bar{a}_{k-1}, \bar{l}_{k-1})\), i.e., the
+  \emph{plug-in g-formula}.
+\item
+  When the components are fit with parametric models, this plug-in
+  g-formula estimator is referred to as the \emph{parametric g-formula}.
+\end{itemize}
+
+\end{frame}
+
+\hypertarget{estimation-inverse-probability-weighting}{%
+\section{Estimation: Inverse Probability
+Weighting}\label{estimation-inverse-probability-weighting}}
+
+\begin{frame}{Inverse probability weighting at a single time point}
+\protect\hypertarget{inverse-probability-weighting-at-a-single-time-point}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  To assess the counterfactual mean outcome \(\E[Y^{A_1 = a}]\) under a
+  treatment contrast \(a\), it is sufficient to examine the
+  counterfactual mean in the pseudo-population based on the weighting
+  scheme \(W^{A_1} = \frac{1}{f(A_1 \mid L_1)}\).
+\item
+  The inverse weight \(W^A\) is constructed based on the propensity
+  score \(f(A_1 \mid L_1)\).
+\item
+  One may also use stabilized weights
+  \(SW^{A_1} = \frac{f(A_1)}{f(A_1 \mid L_1)}\).
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Inverse probability weighting across multiple time points}
+\protect\hypertarget{inverse-probability-weighting-across-multiple-time-points}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  Consider now just two time points where we have time-varying
+  treatments \(\bar{A} = (A_0, A_1)\) and covariates
+  \(\bar{L} = (L_0, L_1)\).
+\item
+  IP weights must be extended to account for history:
+  \[W^{\bar{A}} = \prod_{k=0}^K \frac{1}{f(A_k \mid \bar{A}_{k-1},
+  \bar{L}_k)}.\]
+\item
+  The denominator may be interpreted as the individual's probability of
+  receiving their observed treatment history, conditional on their
+  covariate history.
+\item
+  With nonstabilized IP weights, a pseudo-population is created in which
+  randomization probabilities at each time \(k\) are constant, so
+  sequential exchangeability holds.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Inverse probability weighting across multiple time points}
+\protect\hypertarget{inverse-probability-weighting-across-multiple-time-points-1}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  In general, the \emph{stabilized} IP weights are
+  \[SW^{\bar{A}} = \prod_{k=0}^K \frac{f(A_k \mid \bar{A}_{k-1})}
+  {f(A_k \mid \bar{A}_{k-1}, \bar{L}_k)}.\]
+\item
+  Note that the stabilized term (in the numerator) may be misspecified
+  without inducing any bias in the estimate of the counterfactual mean.
+\item
+  With stabilized IP weights, a pseudo-population is created in which
+  randomization probabilities at each time \(k\) are dependent only on
+  past treatment history, so sequential exchangeability holds.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Inverse probability weighting across multiple time points}
+\protect\hypertarget{inverse-probability-weighting-across-multiple-time-points-2}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  In observational studies, \(f(A_k \mid \bar{A}_{k-1}, \bar{L}_k)\)
+  must be estimated (known by design in randomized trials).
+\item
+  When comparing parametric g-formula and IP weighting estimates,
+  substantial difference implies misspecification of either the outcome
+  or treatment assignment model.
+\item
+  Importantly, while a difference implies model misspecification,
+  agreement between the two \emph{does not certify} their correctness.
+\item
+  When fitting an MSM (e.g.,
+  \(\E[Y \mid \bar{A}] = \theta_0 + \theta_1 \sum_{k=0}^K A_k\)), use
+  weighted least squared with IP weights.
+\item
+  In the case of the IP-weighted MSM, use of the stabilized weights
+  \(SW^{\bar{A}}\) generally gives narrower confidence intervals.
+\end{itemize}
+
+\end{frame}
+
+\hypertarget{censoring-coping-with-missingness}{%
+\section{Censoring: Coping with
+Missingness}\label{censoring-coping-with-missingness}}
+
+\begin{frame}{Censoring at a single time point}
+\protect\hypertarget{censoring-at-a-single-time-point}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  Let \(C = 0\) denote being uncensored. Recall that conditioning on
+  being uncensored induces selection bias under the null.
+\item
+  When \(C\) is either a collider on a pathway between treatment \(A\)
+  and outcome \(Y\) or the descendent of such a collider.
+\item
+  We address censoring by considering a \emph{joint intervention}
+  \(do(A = a, C = 0)\) that makes an individual uncensored and sets
+  their treatment value to \(a\).
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Addressing censoring across multiple time points}
+\protect\hypertarget{addressing-censoring-across-multiple-time-points}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  Censoring is monotonic, i.e., \(C_m = 0\) implies
+  \(C_j = 0 \quad \forall \quad j \in \{1, \ldots, m-1\}\).
+\item
+  As before, we consider a joint intervention:
+  \((\bar{a}, \bar{c} = 0)\) that sets the treatment history to
+  \(\bar{a}\) and induces no censoring.
+\item
+  G-formula for the counterfactual mean \(\E[Y^{\bar{a}}]\) is
+  \[\sum_{\bar{l}} \E[Y \mid \bar{A} = \bar{a}, \bar{C} = \bar{0}, \bar{L} =
+  \bar{l}] \prod_{k=0}^K f(l_k \mid \bar{a}_{k-1}, c_{k-1} = 0,
+  \bar{l}_{k-1}).\]
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Addressing censoring across multiple time points}
+\protect\hypertarget{addressing-censoring-across-multiple-time-points-1}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  IP-weighting may also be used to estimate the counterfactual mean
+  using a pseudo-population created by the weights
+  \(W^{\bar{A}} \times W^{\bar{C}}\), where
+  \[W^{\bar{C}} = \prod_{k=1}^{K+1} \frac{1}{\pr(C_k = 0 \mid
+  \bar{A}_{k-1}, C_{k-1} = 0, \bar{L}_k)}.\]
+\item
+  The effect of IP-weighting to create a pseudo-population is as before
+  --- censoring is abolished by replacing censored individuals with
+  uncensored copies with the same covariate history and treatment
+  history. Thus, the pseudo-population is of the same size as the
+  original \emph{before} censoring.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Addressing censoring across multiple time points}
+\protect\hypertarget{addressing-censoring-across-multiple-time-points-2}{}
+
+\begin{itemize}[<+->]
+\tightlist
+\item
+  Stabilized IP weights also create a (different) pseudo-population,
+  where the weight \(W^{\bar{C}}\) is \[W^{\bar{C}} = \prod_{k=1}^{K+1}
+  \frac{\pr(C_k = 0 \mid \bar{A}_{k-1}, C_{k-1} = 0)}
+  {\pr(C_k = 0 \mid \bar{A}_{k-1}, C_{k-1} = 0, \bar{L}_k)}.\]
+\item
+  Stabilized weights work a bit differently: this pseudo-population is
+  of the same size as the original \emph{after} censoring but with the
+  censoring event made random across observed times, thus removing any
+  selection bias.
+\end{itemize}
+
+\end{frame}
+
+\end{document}
